@@ -1,0 +1,7 @@
+pandas 
+sqlalchemy 
+psycopg2-binary 
+ruptures 
+prometheus-client 
+anthropic 
+numpy
