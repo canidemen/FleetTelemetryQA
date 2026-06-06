@@ -6,3 +6,5 @@ prometheus-client
 anthropic 
 numpy
 sqlalchemy
+notebook
+matplotlib
