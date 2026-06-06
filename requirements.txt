@@ -5,3 +5,4 @@ ruptures
 prometheus-client 
 anthropic 
 numpy
+sqlalchemy
