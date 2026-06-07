@@ -6,6 +6,7 @@ from datetime import datetime
 
 DB_URL = "postgresql://postgres:dev@127.0.0.1:5433/fleetdb"
 Z_SCORE_THRESHOLD = 3.0  # flag if a version is this many sigmas worse than baseline
+MIN_BASELINE_VERSIONS = 3  # need at least this many prior versions for a reliable baseline
 
 VERSIONS_ORDER = ["v1", "v2", "v3", "v4", "v5"]
 
@@ -63,8 +64,8 @@ def detect_regressions(df):
     all_metrics = higher_is_worse + lower_is_worse
 
     for i, row in df.iterrows():
-        if i < 2:
-            continue  # need at least 2 prior versions for a meaningful baseline
+        if i < MIN_BASELINE_VERSIONS:
+            continue  # need at least MIN_BASELINE_VERSIONS prior versions for a reliable baseline
         baseline = df.iloc[:i]
         version = row["software_version"]
 
@@ -117,7 +118,8 @@ def detect_changepoints(engine):
     GROUP BY software_version, bucket
     ORDER BY software_version, bucket;
     """
-    df = pd.read_sql(time_series_query, engine)
+    with engine.connect() as conn:
+        df = pd.read_sql(text(time_series_query), conn)
 
     for version in VERSIONS_ORDER:
         vdf = df[df["software_version"] == version]["disengage_rate"].values

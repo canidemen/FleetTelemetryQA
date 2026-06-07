@@ -1,0 +1,49 @@
+services:
+
+  postgres:
+    image: postgres:16
+    container_name: fleet-postgres
+    environment:
+      POSTGRES_PASSWORD: dev
+      POSTGRES_DB: fleetdb
+    ports:
+      - "5433:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./schema.sql:/docker-entrypoint-initdb.d/schema.sql
+
+  metrics:
+    build: ./metrics_service
+    container_name: fleet-metrics
+    environment:
+      DB_URL: postgresql://postgres:dev@postgres:5432/fleetdb
+    ports:
+      - "8000:8000"
+    depends_on:
+      - postgres
+
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: fleet-prometheus
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+    ports:
+      - "9090:9090"
+    depends_on:
+      - metrics
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: fleet-grafana
+    ports:
+      - "3000:3000"
+    environment:
+      GF_SECURITY_ADMIN_PASSWORD: admin
+    volumes:
+      - grafanadata:/var/lib/grafana
+    depends_on:
+      - prometheus
+
+volumes:
+  pgdata:
+  grafanadata:
