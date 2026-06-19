@@ -42,7 +42,8 @@ generate_telemetry.py
                    Grafana :3000
 ```
 
-`generate_telemetry.py` runs once to populate `telemetry`. `detect_regressions.py` reads
+`quality_metrics.ipynb` contains the exploratory SQL and bar charts that shaped the three
+metrics used by the detector. `generate_telemetry.py` runs once to populate `telemetry`. `detect_regressions.py` reads
 aggregate metrics from `telemetry`, runs the statistical checks, and writes results to
 `findings`. The metrics service is a separate long-running process that re-reads Postgres
 every 15 seconds and exposes Prometheus gauges, including a `fleet_regression_flagged`
