@@ -3,7 +3,7 @@
 > Autonomous-vehicle telemetry pipeline with statistical regression detection, a live Grafana dashboard, and an LLM triage layer powered by Claude.
 
 <!-- ============================================================
-  SCREENSHOT #1 — Grafana dashboard
+  SCREENSHOT #1 — Grafana dashboard 
   Take a full-browser screenshot of http://localhost:3000 with
   all 5 panels visible and v4 clearly spiking in the bar charts.
   Save it as docs/grafana_dashboard.png and replace the line below.
