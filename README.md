@@ -197,9 +197,13 @@ make detect
 # 5. Open Grafana at http://localhost:3000  (admin / admin)
 
 # 6. (Optional) Run LLM triage
-cp .env.example .env        # then paste your Anthropic API key into .env
+cp .env.example .env        # paste your Anthropic API key into .env
 make triage
 ```
+
+All three scripts read `DB_URL` from the environment and fall back to the default local
+connection `postgresql://postgres:dev@127.0.0.1:5433/fleetdb`. Override it in `.env` if
+your Postgres runs elsewhere.
 
 **Make targets**
 

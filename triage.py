@@ -19,7 +19,7 @@ import anthropic
 load_dotenv()
 from sqlalchemy import create_engine, text
 
-DB_URL = "postgresql://postgres:dev@127.0.0.1:5433/fleetdb"
+DB_URL = os.getenv("DB_URL", "postgresql://postgres:dev@127.0.0.1:5433/fleetdb")
 
 SYSTEM_PROMPT = """\
 You are a senior QA engineer reviewing statistical regression findings from an \

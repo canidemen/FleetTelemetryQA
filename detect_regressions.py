@@ -1,9 +1,11 @@
+import os
+
 import pandas as pd
 import ruptures as rpt
 from sqlalchemy import create_engine, text
 from datetime import datetime, timezone
 
-DB_URL = "postgresql://postgres:dev@127.0.0.1:5433/fleetdb"
+DB_URL = os.getenv("DB_URL", "postgresql://postgres:dev@127.0.0.1:5433/fleetdb")
 Z_SCORE_THRESHOLD = 3.0  # flag if a version is this many robust-sigmas worse than baseline
 # 2 is the minimum to have any spread estimate at all. With only 2 baseline points the
 # MAD is a single distance, so the threshold is fragile; more versions help a lot here.

@@ -1,9 +1,11 @@
+import os
+
 import numpy as np
 import pandas as pd
 from datetime import datetime, timedelta
 from sqlalchemy import create_engine
 
-DB_URL = "postgresql://postgres:dev@127.0.0.1:5433/fleetdb"
+DB_URL = os.getenv("DB_URL", "postgresql://postgres:dev@127.0.0.1:5433/fleetdb")
 
 VERSION_PARAMS = {
     "v1": {"disengage_prob": 0.001,  "steering_jitter": 3.0},
