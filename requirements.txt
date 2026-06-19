@@ -4,6 +4,7 @@ psycopg2-binary
 ruptures
 prometheus-client
 anthropic
+python-dotenv
 numpy
 notebook
 matplotlib

@@ -182,6 +182,7 @@ def main():
 
     with engine.begin() as conn:
         conn.execute(text(CREATE_FINDINGS))
+        conn.execute(text("TRUNCATE findings"))
 
     print("Fetching metrics per version...")
     df = fetch_metrics(engine)

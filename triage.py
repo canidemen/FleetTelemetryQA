@@ -13,7 +13,10 @@ Never put the key in this file or any file committed to the repo.
 import os
 import sys
 
+from dotenv import load_dotenv
 import anthropic
+
+load_dotenv()
 from sqlalchemy import create_engine, text
 
 DB_URL = "postgresql://postgres:dev@127.0.0.1:5433/fleetdb"
