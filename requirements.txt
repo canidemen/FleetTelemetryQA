@@ -1,10 +1,10 @@
-pandas 
-sqlalchemy 
-psycopg2-binary 
-ruptures 
-prometheus-client 
-anthropic 
-numpy
+pandas
 sqlalchemy
+psycopg2-binary
+ruptures
+prometheus-client
+anthropic
+numpy
 notebook
 matplotlib
+pytest

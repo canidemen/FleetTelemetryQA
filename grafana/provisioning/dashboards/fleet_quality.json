@@ -1,0 +1,179 @@
+{
+  "title": "Fleet Telemetry QA",
+  "uid": "fleet-qa",
+  "schemaVersion": 36,
+  "refresh": "30s",
+  "time": { "from": "now-6h", "to": "now" },
+  "description": "Per-version quality metrics for the fleet autopilot stack. v4 carries a planted regression: disengagement rate 4x baseline, steering jitter elevated, autopilot engagement drops from ~95% to ~80%. Two independent detectors (robust z-score and PELT changepoint) both flag it.",
+  "panels": [
+    {
+      "id": 1,
+      "type": "barchart",
+      "title": "Disengagements per 100 Miles",
+      "description": "Disengagements per 100 miles driven. Lower is better. v4 runs at 4x the baseline rate.",
+      "gridPos": { "x": 0, "y": 0, "w": 8, "h": 8 },
+      "datasource": "Prometheus",
+      "targets": [
+        {
+          "expr": "fleet_disengagements_per_100_miles",
+          "legendFormat": "{{software_version}}",
+          "instant": true,
+          "refId": "A"
+        }
+      ],
+      "options": {
+        "barWidth": 0.97,
+        "groupWidth": 0.7,
+        "orientation": "auto",
+        "showValue": "auto",
+        "legend": { "displayMode": "list", "placement": "bottom", "showLegend": true, "calcs": ["lastNotNull"] }
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": { "fillOpacity": 80, "lineWidth": 1 }
+        }
+      }
+    },
+    {
+      "id": 2,
+      "type": "barchart",
+      "title": "Average Steering Jitter",
+      "description": "Average absolute steering angle per version. Lower is better. v4 shows elevated jitter consistent with its higher disengagement rate.",
+      "gridPos": { "x": 8, "y": 0, "w": 8, "h": 8 },
+      "datasource": "Prometheus",
+      "targets": [
+        {
+          "expr": "fleet_avg_steering_jitter",
+          "legendFormat": "{{software_version}}",
+          "instant": true,
+          "refId": "A"
+        }
+      ],
+      "options": {
+        "barWidth": 0.97,
+        "groupWidth": 0.7,
+        "orientation": "auto",
+        "showValue": "auto",
+        "legend": { "displayMode": "list", "placement": "bottom", "showLegend": true, "calcs": ["lastNotNull"] }
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": { "fillOpacity": 80, "lineWidth": 1 }
+        }
+      }
+    },
+    {
+      "id": 3,
+      "type": "barchart",
+      "title": "Autopilot Engagement %",
+      "description": "Percentage of time Autopilot was engaged per software version. Higher is better. v4 drops to ~80% while healthy versions sit at ~95%.",
+      "gridPos": { "x": 16, "y": 0, "w": 8, "h": 8 },
+      "datasource": "Prometheus",
+      "targets": [
+        {
+          "expr": "fleet_autopilot_engagement_pct",
+          "legendFormat": "{{software_version}}",
+          "instant": true,
+          "refId": "A"
+        }
+      ],
+      "options": {
+        "barWidth": 0.97,
+        "groupWidth": 0.7,
+        "orientation": "auto",
+        "showValue": "auto",
+        "legend": { "displayMode": "list", "placement": "bottom", "showLegend": true }
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": { "fillOpacity": 80, "lineWidth": 1 }
+        }
+      }
+    },
+    {
+      "id": 4,
+      "type": "state-timeline",
+      "title": "Regression Active by Version",
+      "description": "1 = this version has at least one active regression finding from the statistical detector. 0 = clean.",
+      "gridPos": { "x": 0, "y": 8, "w": 12, "h": 8 },
+      "datasource": "Prometheus",
+      "targets": [
+        {
+          "expr": "fleet_regression_flagged",
+          "legendFormat": "{{software_version}}",
+          "refId": "A"
+        }
+      ],
+      "options": {
+        "mergeValues": true,
+        "showValue": "auto",
+        "alignValue": "left",
+        "rowHeight": 0.9,
+        "legend": { "displayMode": "list", "placement": "bottom", "showLegend": true }
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "continuous-GrYlRd" },
+          "custom": { "fillOpacity": 70, "lineWidth": 0 },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": 0 },
+              { "color": "red", "value": 1 }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": 5,
+      "type": "table",
+      "title": "Flagged Findings",
+      "description": "All flagged regressions and changepoints written by detect_regressions.py. Sorted by z-score (severity). Detection is purely statistical; this table is the ground truth output.",
+      "gridPos": { "x": 12, "y": 8, "w": 12, "h": 8 },
+      "datasource": { "type": "grafana-postgresql-datasource", "uid": "P44368ADAD746BC27" },
+      "targets": [
+        {
+          "rawSql": "SELECT detected_at, software_version, metric, z_score, finding_type, detail FROM findings ORDER BY z_score DESC",
+          "format": "table",
+          "refId": "A"
+        }
+      ],
+      "options": {
+        "cellHeight": "sm",
+        "showHeader": true
+      },
+      "fieldConfig": {
+        "defaults": {
+          "custom": { "align": "auto", "cellOptions": { "type": "auto" } }
+        },
+        "overrides": [
+          {
+            "matcher": { "id": "byName", "options": "software_version" },
+            "properties": [{ "id": "custom.width", "value": 135 }]
+          },
+          {
+            "matcher": { "id": "byName", "options": "z_score" },
+            "properties": [{ "id": "custom.width", "value": 96 }]
+          },
+          {
+            "matcher": { "id": "byName", "options": "metric" },
+            "properties": [{ "id": "custom.width", "value": 181 }]
+          }
+        ]
+      }
+    }
+  ],
+  "__inputs": [
+    { "name": "DS_PROMETHEUS", "label": "Prometheus", "type": "datasource", "pluginId": "prometheus" },
+    { "name": "DS_POSTGRES",   "label": "Postgres",   "type": "datasource", "pluginId": "grafana-postgresql-datasource" }
+  ],
+  "__requires": [
+    { "type": "grafana", "id": "grafana", "name": "Grafana", "version": "9.0.0" },
+    { "type": "datasource", "id": "prometheus", "name": "Prometheus", "version": "1.0.0" },
+    { "type": "datasource", "id": "grafana-postgresql-datasource", "name": "PostgreSQL", "version": "1.0.0" }
+  ]
+}

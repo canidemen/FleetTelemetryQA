@@ -1,12 +1,13 @@
-import numpy as np
 import pandas as pd
 import ruptures as rpt
 from sqlalchemy import create_engine, text
-from datetime import datetime
+from datetime import datetime, timezone
 
 DB_URL = "postgresql://postgres:dev@127.0.0.1:5433/fleetdb"
-Z_SCORE_THRESHOLD = 3.0  # flag if a version is this many sigmas worse than baseline
-MIN_BASELINE_VERSIONS = 3  # need at least this many prior versions for a reliable baseline
+Z_SCORE_THRESHOLD = 3.0  # flag if a version is this many robust-sigmas worse than baseline
+# 2 is the minimum to have any spread estimate at all. With only 2 baseline points the
+# MAD is a single distance, so the threshold is fragile; more versions help a lot here.
+MIN_BASELINE_VERSIONS = 2
 
 VERSIONS_ORDER = ["v1", "v2", "v3", "v4", "v5"]
 
@@ -20,8 +21,8 @@ CREATE TABLE IF NOT EXISTS findings (
     software_version VARCHAR(10) NOT NULL,
     metric          VARCHAR(60)  NOT NULL,
     value           FLOAT        NOT NULL,
-    baseline_mean   FLOAT        NOT NULL,
-    baseline_std    FLOAT        NOT NULL,
+    baseline_median FLOAT        NOT NULL,
+    baseline_mad    FLOAT        NOT NULL,
     z_score         FLOAT        NOT NULL,
     finding_type    VARCHAR(20)  NOT NULL,  -- 'regression' or 'changepoint'
     detail          TEXT
@@ -70,29 +71,32 @@ def detect_regressions(df):
         version = row["software_version"]
 
         for metric in all_metrics:
-            mean = baseline[metric].astype(float).mean()
-            std  = baseline[metric].astype(float).std()
-            if std == 0:
+            vals = baseline[metric].astype(float)
+            median = vals.median()
+            mad = (vals - median).abs().median()
+            if mad == 0:
                 continue
             value = float(row[metric])
-            z = (value - mean) / std
+            # 0.6745 scales MAD to match standard deviation for normal data,
+            # keeping the z-score comparable to the classical 3-sigma rule.
+            z = 0.6745 * (value - median) / mad
             # flip sign so positive z always means "worse"
             if metric in lower_is_worse:
                 z = -z
 
             if z > Z_SCORE_THRESHOLD:
                 findings.append({
-                    "detected_at":      datetime.utcnow(),
+                    "detected_at":      datetime.now(timezone.utc),
                     "software_version": version,
                     "metric":           metric,
                     "value":            value,
-                    "baseline_mean":    mean,
-                    "baseline_std":     std,
+                    "baseline_median":   float(median),
+                    "baseline_mad":      float(mad),
                     "z_score":          round(z, 3),
                     "finding_type":     "regression",
                     "detail": (
-                        f"{version} is {z:.2f} sigma worse than baseline "
-                        f"(value={value:.4f}, baseline mean={mean:.4f})"
+                        f"{version} is {z:.2f} robust-sigma worse than baseline "
+                        f"(value={value:.4f}, baseline median={median:.4f})"
                     ),
                 })
 
@@ -142,12 +146,12 @@ def detect_changepoints(engine):
                 change_pct  = abs(after_mean - before_mean) / (before_mean + 1e-9) * 100
                 if change_pct > 20:  # only report meaningful shifts
                     findings.append({
-                        "detected_at":      datetime.utcnow(),
+                        "detected_at":      datetime.now(timezone.utc),
                         "software_version": version,
                         "metric":           "disengagements_per_100_miles",
                         "value":            float(after_mean),
-                        "baseline_mean":    float(before_mean),
-                        "baseline_std":     float(vdf[:bp].std()),
+                        "baseline_median":   float(before_mean),
+                        "baseline_mad":      float(vdf[:bp].std()),
                         "z_score":          0.0,
                         "finding_type":     "changepoint",
                         "detail": (
